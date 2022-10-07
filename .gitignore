@@ -1,0 +1,12 @@
+*.sln
+*.dll
+
+.vs/*
+Content/ConvertedCar/*
+DerivedDataCache/*
+
+Saved/*
+Binaries/*
+Plugins/*/Binaries/*
+Intermediate/*
+Plugins/*/Intermediate/*

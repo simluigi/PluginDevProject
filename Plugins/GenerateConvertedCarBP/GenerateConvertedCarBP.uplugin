@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "GenerateConvertedCarBP",
+	"Description": "",
+	"Category": "Other",
+	"CreatedBy": "Luigi Sim",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "GenerateConvertedCarBP",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
