@@ -6,19 +6,20 @@
 #include "Misc/MessageDialog.h"
 #include "ToolMenus.h"
 
-// For file dialog.
-#include "Interfaces/IMainFrameModule.h"
-#include "IDesktopPlatform.h"
-#include "DesktopPlatformModule.h"
-
 // For Blueprint generation
 #include "Kismet2/KismetEditorUtilities.h"
 #include <AssetRegistry/AssetRegistryModule.h>
 #include <ObjectTools.h>
 
-// For Chaos Vehicle support
-#include "../../../../../../../../../Program Files/Epic Games/UE_5.0/Engine/Plugins/Experimental/ChaosVehiclesPlugin/Source/ChaosVehicles/Public/WheeledVehiclePawn.h"
+// For UAssetImportData
+#include "EditorFramework/AssetImportData.h"
 
+// For Skeletal Mesh support
+#include "Components/SkeletalMeshComponent.h"
+
+// For Chaos Vehicle support
+#include "ChaosVehicles/Public/WheeledVehiclePawn.h"
+#include <ChaosVehicleMovementComponent.h>
 
 static const FName GenerateConvertedCarBPTabName("GenerateConvertedCarBP");
 static const TCHAR PackageName[] = TEXT("/Game/Blueprints/BP_ConvertTest");
@@ -60,49 +61,7 @@ void FGenerateConvertedCarBPModule::ShutdownModule()
 
 void FGenerateConvertedCarBPModule::PluginButtonClicked()
 {
-	//// select Converted Car output to import
-	//FString importPath = "/Game/ConvertedCar/";
-	//bool validPath = OpenFileDialog("ConvertTest File | *.uasset", "Select converted car file to import", importPath);
-	//if (!validPath)
-	//{
-	//	UE_LOG(LogTemp, Error, TEXT("Failed to get file path!"))
-	//		return;
-	//}
-	
-	// Generate blank blueprint of parent type WheeledVehiclePawn	
-	FName BlueprintName = FName(ObjectTools::SanitizeObjectName("BP_ConvertTest"));
-	FString AssetPath = "/" + BlueprintName.ToString();
-	UPackage* Package = CreatePackage(PackageName);
-
-	UBlueprint* Blueprint = FKismetEditorUtilities::CreateBlueprint(
-		AWheeledVehiclePawn::StaticClass(),
-		Package,
-		BlueprintName,
-		BPTYPE_Normal,
-		UBlueprint::StaticClass(),
-		UBlueprintGeneratedClass::StaticClass()
-	);
-
-	if (Blueprint) {
-
-		// Editing the Blueprint
-		AWheeledVehiclePawn* BlueprintValues = Blueprint->GeneratedClass.Get()->GetDefaultObject<AWheeledVehiclePawn>();
-		//BlueprintValues->
-
-		// Compile blueprint
-		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::None, nullptr);
-
-		// Notify the asset registry
-		FAssetRegistryModule::AssetCreated(Blueprint);
-
-		// Mark the package dirty.
-		Package->MarkPackageDirty();
-
-		// Show successful asset creation dialog
-		
-	}
-
-	
+	GenerateBlueprint();
 }
 
 void FGenerateConvertedCarBPModule::RegisterMenus()
@@ -130,53 +89,46 @@ void FGenerateConvertedCarBPModule::RegisterMenus()
 	}
 }
 
-bool FGenerateConvertedCarBPModule::OpenFileDialog(const char* extension, const char* fileDialogName, FString& retPath)
+bool FGenerateConvertedCarBPModule::GenerateBlueprint()
 {
-	// Get window handle
-	void* windowHandle = nullptr;
-	if (GIsEditor)
+	// Generate blank blueprint of parent type WheeledVehiclePawn	
+	FName BlueprintName = FName(ObjectTools::SanitizeObjectName("BP_ConvertTest"));
+	FString assetPath = "/" + BlueprintName.ToString();
+	UPackage* package = CreatePackage(PackageName);
+
+	UBlueprint* Blueprint = FKismetEditorUtilities::CreateBlueprint(
+		AWheeledVehiclePawn::StaticClass(),
+		package,
+		BlueprintName,
+		BPTYPE_Normal,
+		UBlueprint::StaticClass(),
+		UBlueprintGeneratedClass::StaticClass()
+	);
+
+	if (Blueprint) 
 	{
-		// Get main window
-		IMainFrameModule& mainFrameModule = IMainFrameModule::Get();
-		TSharedPtr<SWindow> mainWindow = mainFrameModule.GetParentWindow();
+		// Use ConvertTest asset as mesh data for Blueprint
+		USkeletalMesh* Mesh = LoadObject<USkeletalMesh>(NULL, TEXT("/Game/ConvertedCar/ConvertTest"), NULL, LOAD_None, NULL);
 
-		if (mainWindow.IsValid() && mainWindow->GetNativeWindow().IsValid())
-		{
-			windowHandle = mainWindow->GetNativeWindow()->GetOSWindowHandle();
-		}
+		// Editing the Blueprint
+		AWheeledVehiclePawn* BlueprintValues = Blueprint->GeneratedClass.Get()->GetDefaultObject<AWheeledVehiclePawn>();
+		BlueprintValues->GetMesh()->SetSkeletalMesh(Mesh);
+		
+		// TODO: Set the Mesh's Animation BP
+		// BlueprintValues->GetMesh()->SetAnimInstanceClass(Anim_ConvertTest);
+
+		// Compile blueprint
+		FKismetEditorUtilities::CompileBlueprint(Blueprint, EBlueprintCompileOptions::None, nullptr);
+
+		// Notify the asset registry
+		FAssetRegistryModule::AssetCreated(Blueprint);
+
+		// Mark the package dirty.
+		package->MarkPackageDirty();
+
+		return true;
 	}
-	else
-	{
-		if (GEngine && GEngine->GameViewport)
-		{
-			windowHandle = GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle();
-		}
-	}
-	if (windowHandle == nullptr) return false;
 
-	IDesktopPlatform* desktopPlatform = FDesktopPlatformModule::Get();
-	if (desktopPlatform == nullptr) return false;
-
-	TArray<FString> FilePaths;
-	bool result = desktopPlatform->OpenFileDialog(
-		windowHandle,
-		fileDialogName,
-		TEXT(""),
-		TEXT(""),
-		extension,
-		EFileDialogFlags::Type::None,
-		FilePaths);
-
-	if (FilePaths.Num() < 1)	return false;
-
-	retPath = FilePaths[0];
-	return true;
-}
-
-bool FGenerateConvertedCarBPModule::GenerateBPAsset()
-{
-	// Create JSON File
-	// FString JSONFilePath = 
 	return false;
 }
 

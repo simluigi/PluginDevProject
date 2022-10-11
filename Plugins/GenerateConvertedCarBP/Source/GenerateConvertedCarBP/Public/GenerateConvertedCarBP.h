@@ -24,10 +24,7 @@ public:
 private:
 
 	void	RegisterMenus();
-	bool	OpenFileDialog(const char* extension, const char* fileDialogName, FString& retPath);
-	bool	GenerateBPAsset();
+	bool	GenerateBlueprint();
 
-
-private:
 	TSharedPtr<class FUICommandList> PluginCommands;
 };
